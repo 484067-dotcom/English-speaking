@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英会話・英語面接 スピーキング練習アプリ Pro</title>
+    <title>AI添削付き・英会話スピーキング練習アプリ (Gemini版)</title>
     <style>
         :root {
-            --primary-color: #2b6cb0;
+            --primary-color: #1a73e8; /* Googleブルーに変更 */
             --bg-color: #f7fafc;
             --card-bg: #ffffff;
             --text-color: #2d3748;
             --accent-color: #dd6b20;
+            --success-color: #1a73e8; 
         }
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', メイリオ, sans-serif;
@@ -88,7 +89,7 @@
         }
         .question-box {
             min-height: 90px;
-            background: #ebf8ff;
+            background: #e8f0fe;
             border-radius: 8px;
             padding: 16px;
             display: flex;
@@ -109,6 +110,17 @@
             border-radius: 10px;
             margin-bottom: 8px;
         }
+        .speech-result-box {
+            background: #fff;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            color: #4a5568;
+            min-height: 40px;
+            text-align: left;
+        }
         .timer {
             font-size: 2rem;
             font-weight: bold;
@@ -128,10 +140,23 @@
             width: 100%;
             margin-bottom: 10px;
         }
-        .btn:hover { background-color: #2b6cb0; }
+        .btn:hover { background-color: #1557b0; }
         .btn-secondary { background-color: #718096; }
         .btn-secondary:hover { background-color: #4a5568; }
         
+        .ai-btn {
+            background-color: #1a73e8;
+            display: inline-block;
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        .ai-btn:hover { background-color: #1557b0; }
+
         .feedback-box {
             display: none;
             background: #f7fafc;
@@ -146,7 +171,7 @@
 <body>
 
 <div class="container">
-    <h1>English Speaking Practice</h1>
+    <h1>English Speaking & Gemini Review</h1>
     
     <div id="configArea" class="config-box">
         <div class="config-title">⚙️ Practice Settings</div>
@@ -155,11 +180,11 @@
             <select id="selectCategory">
                 <option value="all">All Topics (ランダム)</option>
                 <option value="Daily">Daily Life (日常・自己紹介)</option>
-                <option value="School">School Life (学校生活・部活) ✨New</option>
-                <option value="Travel">Travel & Culture (旅行・文化) ✨New</option>
+                <option value="School">School Life (学校生活・部活)</option>
+                <option value="Travel">Travel & Culture (旅行・文化)</option>
                 <option value="Opinion">Your Opinion (社会・意見)</option>
                 <option value="Interview">Academic/Job (面接・将来)</option>
-                <option value="Original">Original (先生のオリジナル問題) ✨New</option>
+                <option value="Original">Original (オリジナル枠)</option>
             </select>
         </div>
         <div class="config-group">
@@ -181,6 +206,11 @@
     <div id="questionBox" class="question-box">
         <div id="questionText">Ready? Click "Start" to practice!</div>
     </div>
+
+    <div id="speechArea" style="display:none;">
+        <div style="font-size:0.8rem; color:#718096; text-align:left; margin-bottom:3px;">🎙️ あなたが喋った英語（リアルタイム文字起こし）:</div>
+        <div id="speechResult" class="speech-result-box">（ここに喋った英語が表示されます）</div>
+    </div>
     
     <div id="timer" class="timer">00:45</div>
 
@@ -191,35 +221,15 @@
 </div>
 
 <script>
-    // 【質問データベース】★ここを書き換えるだけで質問を自由に増減できます
     const questionsDatabase = [
-        // 1. Daily Life
-        { cat: "Daily", q: "Could you please tell me about your hometown?", advice: "場所の説明だけでなく、何が有名か、何をするのがおすすめか（You can enjoy... / It is famous for...）を1つ付け加えましょう。" },
-        { cat: "Daily", q: "What do you like to do in your free time?", advice: "趣味を答えた後、「なぜそれが好きなのか」「どれくらいの頻度でやるのか」まで広げて2〜3文で答えるのがコツです。" },
-        { cat: "Daily", q: "How do you usually study English?", advice: "単語の暗記、動画視聴など具体的な方法（By watching..., I try to...）を挙げ、その効果も添えてみましょう。" },
-        
-        // 2. School Life (新設)
-        { cat: "School", q: "What is your favorite school subject, and why?", advice: "「〇〇が好き」の後に、「先生が面白いから」「将来役に立つから」などの具体的な理由（Because it's interesting/useful for me）を繋げましょう。" },
-        { cat: "School", q: "Tell me about your school club or any school events you like.", advice: "部活動や、文化祭・体育祭などの思い出です。どんな活動をしているか、何が楽しかったかを過去形（I enjoyed... / We practiced...）を使って話しましょう。" },
-        { cat: "School", q: "What do you usually do during lunch break at school?", advice: "友達とおしゃべりする、お弁当を食べる、次の教室に移動するなど、普段のありふれた学校の風景をシンプルな現在形で描写します。" },
-
-        // 3. Travel & Culture (新設)
-        { cat: "Travel", q: "If you could visit any country, where would you like to go?", advice: "行きたい国（I'd like to visit...）を挙げ、そこで「何を見たいか」「何を体験したいか」（I want to see... / I want to try...）を語りましょう。" },
-        { cat: "Travel", q: "Do you prefer traveling by train or by airplane?", advice: "AかBかを選ぶ質問です。選んだ方のメリット（窓からの景色が綺麗、移動が早いなど）を比較級（...is faster than...）などを使って説明できると素晴らしいです。" },
-        { cat: "Travel", q: "What is the best place you have ever visited in Japan?", advice: "これまでの経験（I have been to... / I visited...）を振り返り、そこがなぜ特別だったのか（The scenery was beautiful / The food was delicious）を伝えましょう。" },
-
-        // 4. Your Opinion
-        { cat: "Opinion", q: "Do you think students should wear school uniforms?", advice: "まず自分の立場（I think / I don't think）を明確にし、Becauseで理由を2つ（利便性、平等性、個人の自由など）述べられるとベストです。" },
-        { cat: "Opinion", q: "Some people say that cell phones are distracting for students. What do you think?", advice: "賛否両論あるトピックです。メリット（便利、安全）とデメリット（勉強の邪魔）を比較しながら意見をまとめましょう。" },
-        
-        // 5. Academic/Job
-        { cat: "Interview", q: "Why are you interested in studying at this school / working here?", advice: "志望動機です。その学校や場所ならではの強みと、自分の将来の夢（My goal is to...）をリンクさせて熱意を伝えましょう。" },
-        { cat: "Interview", q: "What is your biggest strength, and how can you use it?", advice: "自分の強み（My strength is flexibility/persistenceなど）を述べ、それを証明する過去の具体的なエピソードを短く添えます。" },
-
-        // 6. Original (新設：先生が自由に変更して使える枠です)
-        { cat: "Original", q: "Welcome to our class! Please introduce yourself briefly.", advice: "【オリジナル例】自己紹介です。名前、年齢、好きなこと、このクラスで頑張りたいことなどをハキハキ話しましょう。" },
-        { cat: "Original", q: "What did you do yesterday? Please tell me in detail.", advice: "【オリジナル例】昨日の行動の振り返りです。過去形（went, ate, studiedなど）が正しく使えているかのチェックポイントになります。" },
-        { cat: "Original", q: "What is your goal for this English class?", advice: "【オリジナル例】この授業での目標です。「スピーキングをもっと頑張りたい（I want to improve my speaking skills）」など前向きに。" }
+        { cat: "Daily", q: "Could you please tell me about your hometown?", advice: "場所の説明だけでなく、何が有名か、何をするのがおすすめかを付け加えましょう。" },
+        { cat: "Daily", q: "What do you like to do in your free time?", advice: "趣味を答えた後、「なぜそれが好きなのか」「どれくらいの頻度でやるのか」まで広げましょう。" },
+        { cat: "School", q: "What is your favorite school subject, and why?", advice: "「〇〇が好き」の後に、具体的な理由（Because it's interesting...など）を繋げましょう。" },
+        { cat: "School", q: "Tell me about your school club or any school events you like.", advice: "部活動や思い出です。過去形（I enjoyed... / We practiced...）を使って話しましょう。" },
+        { cat: "Travel", q: "If you could visit any country, where would you like to go?", advice: "行きたい国を挙げ、そこで「何を見たいか」「何を体験したいか」を語りましょう。" },
+        { cat: "Opinion", q: "Do you think students should wear school uniforms?", advice: "まず自分の立場（I think...）を明確にし、Becauseで理由を2つ述べられるとベストです。" },
+        { cat: "Interview", q: "Why are you interested in studying at this school?", advice: "志望動機です。学校の強みと自分の将来の夢をリンクさせて熱意を伝えましょう。" },
+        { cat: "Original", q: "Welcome to our class! Please introduce yourself briefly.", advice: "自己紹介です。名前、好きなこと、目標などをハキハキ話しましょう。" }
     ];
 
     let currentQuestions = [];
@@ -228,6 +238,26 @@
     let timeLeft = 45;
     let maxTimePerQuestion = 45;
     let historyAdvices = [];
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.continuous = true;
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('speechResult').innerText = transcript;
+            if(historyAdvices[currentQuestionIndex]) {
+                historyAdvices[currentQuestionIndex].userAnswer = transcript;
+            }
+        };
+    }
 
     async function initCamera() {
         try {
@@ -248,11 +278,6 @@
             filtered = questionsDatabase.filter(q => q.cat === category);
         }
 
-        if(filtered.length === 0) {
-            alert("No questions found.");
-            return;
-        }
-
         filtered.sort(() => Math.random() - 0.5);
         currentQuestions = filtered.slice(0, Math.min(totalCountSetting, filtered.length));
 
@@ -262,6 +287,7 @@
         document.getElementById('feedbackArea').style.display = 'none';
         document.getElementById('progressText').style.display = 'block';
         document.getElementById('stopBtn').style.display = 'block';
+        document.getElementById('speechArea').style.display = 'block';
         
         document.getElementById('actionBtn').onclick = nextQuestion;
         
@@ -275,9 +301,10 @@
         }
 
         const currentData = currentQuestions[currentQuestionIndex];
-        historyAdvices.push({ q: currentData.q, advice: currentData.advice });
+        historyAdvices.push({ q: currentData.q, advice: currentData.advice, userAnswer: '' });
 
         document.getElementById('progressText').innerText = `Q: ${currentQuestionIndex + 1} / ${currentQuestions.length}`;
+        document.getElementById('speechResult').innerText = '（Listening... 英語で喋ってください）';
 
         document.getElementById('questionBox').innerHTML = `
             <span class="category-tag">${currentData.cat}</span>
@@ -290,6 +317,10 @@
             document.getElementById('actionBtn').innerText = 'Next Question';
         }
 
+        if (recognition) {
+            try { recognition.start(); } catch(e) {}
+        }
+
         clearInterval(timerInterval);
         timeLeft = maxTimePerQuestion;
         updateTimerDisplay();
@@ -299,17 +330,18 @@
             updateTimerDisplay();
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                document.getElementById('timer').innerText = "Time's up! Please go to next.";
+                document.getElementById('timer').innerText = "Time's up!";
+                if (recognition) { recognition.stop(); }
             }
         }, 1000);
     }
 
     function nextQuestion() {
+        if (recognition) { recognition.stop(); }
         currentQuestionIndex++;
         showQuestion();
     }
 
-    // タイマー表示更新
     function updateTimerDisplay() {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
@@ -319,10 +351,12 @@
 
     function stopInterview(isInterrupted) {
         clearInterval(timerInterval);
+        if (recognition) { recognition.stop(); }
         
         document.getElementById('configArea').style.display = 'block';
         document.getElementById('progressText').style.display = 'none';
         document.getElementById('stopBtn').style.display = 'none';
+        document.getElementById('speechArea').style.display = 'none';
         
         document.getElementById('questionBox').innerHTML = '<div id="questionText">Great job! Practice completed.</div>';
         document.getElementById('timer').innerText = '00:00';
@@ -333,30 +367,27 @@
         const feedbackArea = document.getElementById('feedbackArea');
         feedbackArea.style.display = 'block';
 
-        let titleText = isInterrupted ? "Review (途中終了)" : "🎉 Review & Hints";
+        let titleText = isInterrupted ? "Review (途中終了)" : "🎉 Review & Gemini添削";
         
         let html = `<h3 style="margin-top:0; color:var(--primary-color);">${titleText}</h3>`;
-        html += `<p style="font-size:0.9rem; color:#4a5568;">答えた内容を振り返り、より詳しく話すための構成（理由や具体例）を考えてみましょう。</p>`;
+        html += `<p style="font-size:0.9rem; color:#4a5568;">自分が話した英語の文字起こしを確認し、青色のボタンからGeminiに添削してもらいましょう！</p>`;
 
         historyAdvices.forEach((item, index) => {
+            // 【変更点】Geminiへ送るプロンプトとURLの自動生成
+            const promptText = `私は英語のスピーキング練習をしています。質問「${item.q}」に対して、私が答えた次の英語「${item.userAnswer || '(未入力)'}」の文法ミスを修正し、高校生向けにより自然でカッコいい表現にした選択肢を3つ教えてください。`;
+            const encodedPrompt = encodeURIComponent(promptText);
+            const geminiUrl = `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+
             html += `
-                <div style="margin-bottom: 15px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 10px;">
-                    <strong style="color:#2c5282;">Q${index + 1}: ${item.q}</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #4a5568;">💡 <b>コツ:</b> ${item.advice}</p>
+                <div style="margin-bottom: 20px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 15px;">
+                    <strong style="color:#1a73e8;">Q${index + 1}: ${item.q}</strong><br>
+                    <div style="background:#f7fafc; padding:8px; border-radius:4px; margin:5px 0; font-size:0.9rem; border-left:3px solid #cbd5e0;">
+                        🗣️ <b>あなたの回答:</b> ${item.userAnswer || '<span style="color:#a0aec0;">(聞き取れませんでした。もう一度トライしてみましょう)</span>'}
+                    </div>
+                    ${item.userAnswer ? `<a href="${geminiUrl}" target="_blank" class="ai-btn">✨ Geminiでこの回答の添削を見る</a>` : ''}
                 </div>
             `;
         });
-
-        html += `
-            <div style="background:#ebf8ff; padding:12px; border-radius:6px; margin-top:15px; font-size:0.85rem;">
-                <b>📋 English Speaking Tips (共通チェック):</b>
-                <ul style="margin:5px 0 0 20px; padding:0; color:#2b6cb0;">
-                    <li><b>Don't be afraid of making mistakes:</b> 完璧な文法より、まずは沈黙せずに話し続けることが最優先です。</li>
-                    <li><b>Give reasons/examples:</b> 一言（Yes/Noや単語だけ）で終わらせず、"Because..." や "For example..." で文章を2文以上繋げられましたか？</li>
-                    <li><b>Eye contact & Smile:</b> カメラ（聞き手）を見て、自信があるようにハキハキと発音できましたか？</li>
-                </ul>
-            </div>
-        `;
         
         feedbackArea.innerHTML = html;
     }
