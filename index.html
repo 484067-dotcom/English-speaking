@@ -11,7 +11,6 @@
             --card-bg: #ffffff;
             --text-color: #2d3748;
             --accent-color: #dd6b20;
-            --success-color: #1a73e8; 
         }
         body {
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', メイリオ, sans-serif;
@@ -147,14 +146,16 @@
         
         .ai-btn {
             background-color: #1a73e8;
-            display: inline-block;
-            text-decoration: none;
+            border: none;
             color: white;
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 6px;
             font-weight: bold;
             font-size: 0.9rem;
             margin-top: 8px;
+            cursor: pointer;
+            display: inline-block;
+            transition: background 0.2s;
         }
         .ai-btn:hover { background-color: #1557b0; }
 
@@ -240,12 +241,12 @@
     let maxTimePerQuestion = 45;
     let historyAdvices = [];
     
-    // 確定した文章をためておく変数
     let finalTranscript = ''; 
-
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
-    if (SpeechRecognition) {
+
+    function initRecognition() {
+        if (!SpeechRecognition) return;
         recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.interimResults = true;
@@ -253,7 +254,6 @@
 
         recognition.onresult = (event) => {
             let interimTranscript = '';
-            // 毎回リセットせず、これまでに確定した文章(finalTranscript)に新しく喋った分を足し算する
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
                     finalTranscript += event.results[i][0].transcript + ' ';
@@ -261,11 +261,8 @@
                     interimTranscript += event.results[i][0].transcript;
                 }
             }
-            
-            // 画面とデータに「確定分 ＋ いま喋り途中の分」を表示
             const fullText = finalTranscript + interimTranscript;
             document.getElementById('speechResult').innerText = fullText;
-            
             if(historyAdvices[currentQuestionIndex]) {
                 historyAdvices[currentQuestionIndex].userAnswer = fullText;
             }
@@ -279,6 +276,7 @@
         } catch (err) {
             alert("Camera error. Please allow camera access.");
         }
+        initRecognition();
     }
 
     function startInterview() {
@@ -313,9 +311,7 @@
             return;
         }
 
-        // 新しい質問に移るタイミングで文字起こしの記憶をリセット
         finalTranscript = ''; 
-
         const currentData = currentQuestions[currentQuestionIndex];
         historyAdvices.push({ q: currentData.q, advice: currentData.advice, userAnswer: '' });
 
@@ -333,8 +329,12 @@
             document.getElementById('actionBtn').innerText = 'Next Question';
         }
 
+        // 音声認識を新しくクリーンに起動する（バグ対策）
         if (recognition) {
-            try { recognition.start(); } catch(e) {}
+            try { recognition.stop(); } catch(e) {}
+            setTimeout(() => {
+                try { recognition.start(); } catch(e) {}
+            }, 200);
         }
 
         clearInterval(timerInterval);
@@ -347,15 +347,16 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 document.getElementById('timer').innerText = "Time's up!";
-                if (recognition) { recognition.stop(); }
+                if (recognition) { try { recognition.stop(); } catch(e) {} }
             }
         }, 1000);
     }
 
     function nextQuestion() {
-        if (recognition) { recognition.stop(); }
+        if (recognition) { try { recognition.stop(); } catch(e) {} }
         currentQuestionIndex++;
-        showQuestion();
+        // わずかにディレイをかけて次へ（マイクの競合バグを防ぐ）
+        setTimeout(showQuestion, 100);
     }
 
     function updateTimerDisplay() {
@@ -365,9 +366,27 @@
             `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
+    // クリップボードへコピーしてGeminiを開く新しい関数
+    function copyAndOpenGemini(btn, base64Text) {
+        const text = decodeURIComponent(atob(base64Text));
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "✅ コピー完了！Geminiを開きます...";
+            btn.style.backgroundColor = "#38a169";
+            
+            setTimeout(() => {
+                window.open("https://gemini.google.com/app", "_blank");
+                btn.innerText = originalText;
+                btn.style.backgroundColor = "#1a73e8";
+            }, 800);
+        }).catch(err => {
+            alert("コピーに失敗しました。お手数ですが手動でコピーしてください。");
+        });
+    }
+
     function stopInterview(isInterrupted) {
         clearInterval(timerInterval);
-        if (recognition) { recognition.stop(); }
+        if (recognition) { try { recognition.stop(); } catch(e) {} }
         
         document.getElementById('configArea').style.display = 'block';
         document.getElementById('progressText').style.display = 'none';
@@ -386,20 +405,21 @@
         let titleText = isInterrupted ? "Review (途中終了)" : "🎉 Review & Gemini添削";
         
         let html = `<h3 style="margin-top:0; color:var(--primary-color);">${titleText}</h3>`;
-        html += `<p style="font-size:0.9rem; color:#4a5568;">自分が話した英語の文字起こしを確認し、青色のボタンからGeminiに添削してもらいましょう！</p>`;
+        html += `<p style="font-size:0.9rem; color:#4a5568;">青いボタンを押すと、自動的に添削用の文章がコピーされてGeminiが開きます。開いたGeminiのチャット欄に「貼り付け(Ctrl+V)」をして送信してください！</p>`;
 
         historyAdvices.forEach((item, index) => {
-            const promptText = `私は英語のスピーキング練習をしています。質問「${item.q}」に対して、私が答えた次の英語「${item.userAnswer || '(未入力)'}」の文法ミスを修正し、高校生向けにより自然でカッコいい表現にした選択肢を3つ教えてください。`;
-            const encodedPrompt = encodeURIComponent(promptText);
-            const geminiUrl = `https://gemini.google.com/app?prompt=${encodedPrompt}`;
+            const promptText = `I am practicing English speaking. For the question "${item.q}", I answered: "${item.userAnswer || ''}". Please correct any grammatical mistakes and provide 3 more natural alternative expressions suitable for a high school student in Japanese explanation.`;
+            // 日本語命令もミックスした文章にする
+            const fullPrompt = `私は英語のスピーキング練習をしています。質問「${item.q}」に対して、私が答えた次の英語「${item.userAnswer || '(未入力)'}」の文法ミスを修正し、高校生向けにより自然でカッコいい表現にした選択肢を3つ日本語の解説付きで教えてください。`;
+            const base64Prompt = btoa(unescape(encodeURIComponent(fullPrompt)));
 
             html += `
                 <div style="margin-bottom: 20px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 15px;">
                     <strong style="color:#1a73e8;">Q${index + 1}: ${item.q}</strong><br>
                     <div style="background:#f7fafc; padding:8px; border-radius:4px; margin:5px 0; font-size:0.9rem; border-left:3px solid #cbd5e0; word-break: break-word;">
-                        🗣️ <b>あなたの回答:</b> ${item.userAnswer || '<span style="color:#a0aec0;">(聞き取れませんでした。もう一度トライしてみましょう)</span>'}
+                        🗣️ <b>あなたの回答:</b> ${item.userAnswer || '<span style="color:#a0aec0;">(聞き取れませんでした)</span>'}
                     </div>
-                    ${item.userAnswer ? `<a href="${geminiUrl}" target="_blank" class="ai-btn">✨ Geminiでこの回答の添削を見る</a>` : ''}
+                    ${item.userAnswer ? `<button onclick="copyAndOpenGemini(this, '${base64Prompt}')" class="ai-btn">✨ 文章をコピーしてGeminiで添削する</button>` : ''}
                 </div>
             `;
         });
