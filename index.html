@@ -6,7 +6,7 @@
     <title>AI添削付き・英会話スピーキング練習アプリ (Gemini版)</title>
     <style>
         :root {
-            --primary-color: #1a73e8; /* Googleブルーに変更 */
+            --primary-color: #1a73e8; 
             --bg-color: #f7fafc;
             --card-bg: #ffffff;
             --text-color: #2d3748;
@@ -118,8 +118,9 @@
             margin-bottom: 20px;
             font-size: 1rem;
             color: #4a5568;
-            min-height: 40px;
+            min-height: 60px;
             text-align: left;
+            line-height: 1.4;
         }
         .timer {
             font-size: 2rem;
@@ -208,7 +209,7 @@
     </div>
 
     <div id="speechArea" style="display:none;">
-        <div style="font-size:0.8rem; color:#718096; text-align:left; margin-bottom:3px;">🎙️ あなたが喋った英語（リアルタイム文字起こし）:</div>
+        <div style="font-size:0.8rem; color:#718096; text-align:left; margin-bottom:3px;">🎙️ あなたが喋った英語（すべて記録されます）:</div>
         <div id="speechResult" class="speech-result-box">（ここに喋った英語が表示されます）</div>
     </div>
     
@@ -238,6 +239,9 @@
     let timeLeft = 45;
     let maxTimePerQuestion = 45;
     let historyAdvices = [];
+    
+    // 確定した文章をためておく変数
+    let finalTranscript = ''; 
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
@@ -248,13 +252,22 @@
         recognition.continuous = true;
 
         recognition.onresult = (event) => {
-            let transcript = '';
+            let interimTranscript = '';
+            // 毎回リセットせず、これまでに確定した文章(finalTranscript)に新しく喋った分を足し算する
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                transcript += event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
             }
-            document.getElementById('speechResult').innerText = transcript;
+            
+            // 画面とデータに「確定分 ＋ いま喋り途中の分」を表示
+            const fullText = finalTranscript + interimTranscript;
+            document.getElementById('speechResult').innerText = fullText;
+            
             if(historyAdvices[currentQuestionIndex]) {
-                historyAdvices[currentQuestionIndex].userAnswer = transcript;
+                historyAdvices[currentQuestionIndex].userAnswer = fullText;
             }
         };
     }
@@ -299,6 +312,9 @@
             stopInterview(false);
             return;
         }
+
+        // 新しい質問に移るタイミングで文字起こしの記憶をリセット
+        finalTranscript = ''; 
 
         const currentData = currentQuestions[currentQuestionIndex];
         historyAdvices.push({ q: currentData.q, advice: currentData.advice, userAnswer: '' });
@@ -373,7 +389,6 @@
         html += `<p style="font-size:0.9rem; color:#4a5568;">自分が話した英語の文字起こしを確認し、青色のボタンからGeminiに添削してもらいましょう！</p>`;
 
         historyAdvices.forEach((item, index) => {
-            // 【変更点】Geminiへ送るプロンプトとURLの自動生成
             const promptText = `私は英語のスピーキング練習をしています。質問「${item.q}」に対して、私が答えた次の英語「${item.userAnswer || '(未入力)'}」の文法ミスを修正し、高校生向けにより自然でカッコいい表現にした選択肢を3つ教えてください。`;
             const encodedPrompt = encodeURIComponent(promptText);
             const geminiUrl = `https://gemini.google.com/app?prompt=${encodedPrompt}`;
@@ -381,7 +396,7 @@
             html += `
                 <div style="margin-bottom: 20px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 15px;">
                     <strong style="color:#1a73e8;">Q${index + 1}: ${item.q}</strong><br>
-                    <div style="background:#f7fafc; padding:8px; border-radius:4px; margin:5px 0; font-size:0.9rem; border-left:3px solid #cbd5e0;">
+                    <div style="background:#f7fafc; padding:8px; border-radius:4px; margin:5px 0; font-size:0.9rem; border-left:3px solid #cbd5e0; word-break: break-word;">
                         🗣️ <b>あなたの回答:</b> ${item.userAnswer || '<span style="color:#a0aec0;">(聞き取れませんでした。もう一度トライしてみましょう)</span>'}
                     </div>
                     ${item.userAnswer ? `<a href="${geminiUrl}" target="_blank" class="ai-btn">✨ Geminiでこの回答の添削を見る</a>` : ''}
