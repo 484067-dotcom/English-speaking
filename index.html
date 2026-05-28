@@ -145,19 +145,20 @@
         .btn-secondary:hover { background-color: #4a5568; }
         
         .ai-btn {
-            background-color: #34a853; /* 分かりやすく緑色に */
+            background-color: #34a853; 
             border: none;
             color: white;
-            padding: 12px 20px;
+            padding: 14px 20px;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 1.05rem;
             margin-top: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             cursor: pointer;
             display: inline-block;
             transition: background 0.2s;
             width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .ai-btn:hover { background-color: #2b8a43; }
 
@@ -182,6 +183,15 @@
             padding: 16px;
             margin-top: 20px;
             text-align: left;
+        }
+        .instruction-step {
+            background: #fff;
+            border-left: 4px solid #34a853;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
     </style>
 </head>
@@ -245,7 +255,7 @@
         { cat: "School", q: "Tell me about your school club or any school events you like.", advice: "部活動や思い出です。過去形（I enjoyed... / We practiced...）を使って話しましょう。" },
         { cat: "Travel", q: "If you could visit any country, where would you like to go?", advice: "行きたい国を挙げ、そこで「何を見たいか」「何を体験したいか」を語りましょう。" },
         { cat: "Opinion", q: "Do you think students should wear school uniforms?", advice: "まず自分の立場（I think...）を明確にし、Becauseで理由を2つ述べられるとベストです。" },
-        { cat: "Interview", q: "Why are you interested in studying at this school?", advice: "志義動機です。学校の強みと自分の将来の夢をリンクさせて熱意を伝えましょう。" },
+        { cat: "Interview", q: "Why are you interested in studying at this school?", advice: "志望動機です。学校の強みと自分の将来の夢をリンクさせて熱意を伝えましょう。" },
         { cat: "Original", q: "Welcome to our class! Please introduce yourself briefly.", advice: "自己紹介です。名前、好きなこと、目標などをハキハキ話しましょう。" }
     ];
 
@@ -379,7 +389,6 @@
             `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    // クリップボードへコピーしてGeminiを開く関数（シンプル化）
     function copyAndOpenGemini(btn, textId) {
         const textElement = document.getElementById(textId);
         if (!textElement) return;
@@ -387,12 +396,12 @@
 
         navigator.clipboard.writeText(text).then(() => {
             const originalText = btn.innerText;
-            btn.innerText = "✅ コピー完了！Geminiを開きます...";
+            btn.innerText = "📋 コピー成功！Geminiを開きます...";
             
             setTimeout(() => {
                 window.open("https://gemini.google.com/app", "_blank");
                 btn.innerText = originalText;
-            }, 800);
+            }, 1000);
         }).catch(err => {
             alert("コピーに失敗しました。枠内の文字を直接選んでコピーしてください。");
         });
@@ -418,30 +427,30 @@
 
         let titleText = isInterrupted ? "Review (途中終了)" : "🎉 Review & Gemini添削";
         
-        // 全問まとめて添削用のプロンプト作成
         let allPromptText = "私は高校生です。英語のスピーキング練習をしました。以下のすべての質問と、それに対する私の英語の回答について、文法ミスを直して、より自然でカッコいい英語の表現を日本語の解説付きで教えてください。\n\n";
 
         let html = `<h3 style="margin-top:0; color:var(--primary-color);">${titleText}</h3>`;
         
-        // ★新設：全問一括ボタン
+        // 操作説明をより親切に
         html += `
-            <div style="background:#e6fffa; border:1px solid #34a853; padding:12px; border-radius:8px; margin-bottom:20px; text-align:center;">
-                <p style="margin:0 0 10px 0; font-size:0.9rem; font-weight:bold; color:#234e52;">👉 おすすめ！全問まとめて一気に添削してもらう</p>
-                <button onclick="copyAndOpenGemini(this, 'allQuestionsPrompt')" class="ai-btn">🟢 全問の回答をコピーしてGeminiを開く</button>
+            <div style="background:#e6fffa; border:1px solid #34a853; padding:16px; border-radius:12px; margin-bottom:20px; text-align:left;">
+                <p style="margin:0 0 10px 0; font-size:0.95rem; font-weight:bold; color:#234e52; text-align:center;">💡 Geminiでカンタン添削手順</p>
+                <div class="instruction-step"><b>①</b> 下の緑色のボタンを押す（文章が自動コピーされます）</div>
+                <div class="instruction-step"><b>②</b> 自動で開いたGeminiの入力欄をタップする</div>
+                <div class="instruction-step"><b>③</b> <b>「貼り付け（ペースト）」</b>をして送信ボタンを押す</div>
+                <button onclick="copyAndOpenGemini(this, 'allQuestionsPrompt')" class="ai-btn" style="margin-top:10px;">🟢 全問まとめてコピーしてGeminiを開く</button>
                 <textarea id="allQuestionsPrompt" style="display:none;"></textarea>
             </div>
-            <p style="font-size:0.85rem; color:#4a5568; margin-bottom:15px;">※個別に1問ずつじっくり添削してもらいたい場合は、下の各質問の青いボタンを使ってください。</p>
+            <p style="font-size:0.85rem; color:#4a5568; margin-bottom:15px; text-align:center;">※1問ずつ個別に添削してほしい時は、下の青いボタンを使ってね。</p>
         `;
 
         historyAdvices.forEach((item, index) => {
             const qNum = index + 1;
             const uAnswer = item.userAnswer ? item.userAnswer.trim() : "";
             
-            // 全問まとめテキストへ追加
             allPromptText += `【質問${qNum}】: ${item.q}\n【私の英語回答】: ${uAnswer || '(無回答)'}\n\n`;
 
-            // 個別添削用のプロンプト
-            const singlePrompt = `私は高校生です。英語のスピーキング練習をしています。\n質問：「${item.q}」\n私の回答：「${uAnswer || '(未入力)'}」\nこの回答の文法ミスを修正し、高校生向けにより自然でカッコいい表現にした選択肢を3つ、日本語の解説付きで教えてください。`;
+            const singlePrompt = `I am practicing English speaking. For the question "${item.q}", I answered: "${uAnswer || ''}". Please correct any grammatical mistakes and provide 3 more natural alternative expressions suitable for a high school student in Japanese explanation.`;
 
             html += `
                 <div style="margin-bottom: 20px; border-bottom: 1px dashed #cbd5e0; padding-bottom: 15px;">
@@ -450,14 +459,12 @@
                         🗣️ <b>あなたの回答:</b> ${uAnswer || '<span style="color:#a0aec0;">(聞き取れませんでした)</span>'}
                     </div>
                     <textarea id="promptQ${qNum}" style="display:none;">${singlePrompt}</textarea>
-                    ${uAnswer ? `<button onclick="copyAndOpenGemini(this, 'promptQ${qNum}')" class="ai-btn-small">🔵 Q${qNum}だけGeminiで添削する</button>` : ''}
+                    ${uAnswer ? `<button onclick="copyAndOpenGemini(this, 'promptQ${qNum}')" class="ai-btn-small">🔵 Q${qNum}をコピーしてGeminiを開く</button>` : ''}
                 </div>
             `;
         });
         
         feedbackArea.innerHTML = html;
-        
-        // 全問まとめテキストエリアに値をセット
         document.getElementById('allQuestionsPrompt').value = allPromptText;
     }
 
