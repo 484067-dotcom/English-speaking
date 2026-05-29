@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI添削付き・英会話スピーキング練習アプリ 改良版</title>
+  <title>キーボード音声入力で英会話練習</title>
   <style>
     :root {
       --primary: #1a73e8;
@@ -17,6 +17,7 @@
       --soft-blue: #e8f0fe;
       --soft-green: #e6fffa;
       --soft-yellow: #fffaf0;
+      --soft-red: #fff5f5;
       --text: #2d3748;
       --muted: #718096;
       --line: #e2e8f0;
@@ -30,461 +31,333 @@
       background: linear-gradient(180deg, #f7fbff 0%, var(--bg) 100%);
       color: var(--text);
       margin: 0;
-      padding: 20px;
+      padding: 18px;
     }
 
     .app {
-      max-width: 980px;
+      max-width: 1040px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 1.05fr 0.95fr;
-      gap: 20px;
+      gap: 18px;
       align-items: start;
     }
 
     .card {
       background: var(--card);
-      border-radius: 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
       box-shadow: var(--shadow);
       padding: 22px;
-      border: 1px solid rgba(226, 232, 240, 0.9);
     }
-
-    .main-card { min-width: 0; }
 
     h1 {
-      font-size: clamp(1.35rem, 2vw, 1.8rem);
+      margin: 0 0 8px 0;
       color: var(--primary);
-      margin: 0 0 6px;
+      font-size: 1.55rem;
       line-height: 1.3;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      font-size: 0.92rem;
-      margin-bottom: 16px;
+      text-align: center;
     }
 
     h2 {
-      font-size: 1.05rem;
-      margin: 0 0 12px;
-      color: #1f2937;
+      margin: 0 0 12px 0;
+      color: #1a365d;
+      font-size: 1.1rem;
     }
 
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    .lead {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0 0 16px;
+      line-height: 1.6;
     }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      margin-bottom: 12px;
+    .notice {
+      background: var(--soft-yellow);
+      border: 1px solid #f6d365;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      line-height: 1.7;
       text-align: left;
     }
 
-    .field label {
-      font-size: 0.82rem;
-      font-weight: 700;
+    .notice strong { color: #7b341e; }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 0.84rem;
       color: #4a5568;
+      font-weight: 700;
+      margin-bottom: 6px;
     }
 
     select, input, textarea {
       width: 100%;
-      padding: 10px 11px;
-      border-radius: 10px;
       border: 1px solid #cbd5e0;
-      font-size: 0.95rem;
+      border-radius: 10px;
+      padding: 10px 11px;
+      font-size: 1rem;
       background: #fff;
       color: var(--text);
-    }
-
-    textarea {
-      min-height: 110px;
-      resize: vertical;
-      line-height: 1.5;
       font-family: inherit;
     }
 
-    .settings-panel {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.55;
     }
 
-    .toggle-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-top: 1px dashed #dbe4ef;
-    }
-
-    .toggle-row:first-of-type { border-top: none; }
-
-    .toggle-row label {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: #4a5568;
-    }
-
-    .toggle-row input { width: auto; transform: scale(1.1); }
-
-    .status-bar {
-      display: none;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .progress-wrap {
-      background: #edf2f7;
-      border-radius: 999px;
-      overflow: hidden;
-      height: 12px;
-    }
-
-    .progress-fill {
-      width: 0%;
-      height: 100%;
-      background: var(--primary);
-      transition: width 0.25s ease;
-    }
-
-    .progress-text {
-      font-weight: 700;
-      color: var(--muted);
-      font-size: 0.88rem;
-      min-width: 72px;
-      text-align: right;
-    }
-
-    .video-container {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      background: #111827;
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 16px;
-      position: relative;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-    }
-
-    .camera-off {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      background: #1f2937;
-      line-height: 1.7;
+    textarea:focus, select:focus, input:focus {
+      outline: 3px solid rgba(26,115,232,0.18);
+      border-color: var(--primary);
     }
 
     .question-box {
-      min-height: 116px;
       background: var(--soft-blue);
-      border-radius: 14px;
+      border-left: 6px solid var(--primary);
+      border-radius: 16px;
       padding: 18px;
+      min-height: 130px;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       justify-content: center;
-      margin-bottom: 14px;
-      border-left: 6px solid var(--primary);
-      line-height: 1.55;
-      text-align: left;
+      align-items: center;
+      text-align: center;
+      margin: 14px 0;
     }
 
-    .category-tag {
-      font-size: 0.76rem;
+    .tag {
+      display: inline-block;
       background: var(--primary);
       color: white;
-      padding: 3px 9px;
       border-radius: 999px;
-      margin-bottom: 8px;
+      padding: 3px 10px;
+      font-size: 0.76rem;
       font-weight: 700;
+      margin-bottom: 10px;
     }
 
     .question-text {
-      font-size: clamp(1.08rem, 2vw, 1.35rem);
+      font-size: 1.35rem;
       font-weight: 800;
+      line-height: 1.45;
       color: #1a365d;
     }
 
-    .hint-text {
-      display: none;
-      font-size: 0.88rem;
+    .jp-hint {
+      margin-top: 10px;
       color: #4a5568;
-      margin-top: 9px;
-      background: rgba(255, 255, 255, 0.65);
-      padding: 8px 10px;
-      border-radius: 10px;
+      font-size: 0.9rem;
+      line-height: 1.55;
     }
 
-    .timer-row {
+    .status-row {
       display: flex;
+      gap: 10px;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
+      margin: 10px 0 12px;
+    }
+
+    .progress {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 700;
     }
 
     .timer {
-      font-size: 2.3rem;
-      font-weight: 900;
+      font-size: 2rem;
       color: var(--warning);
-      letter-spacing: 0.02em;
+      font-weight: 900;
+      letter-spacing: 0.03em;
     }
 
-    .recording-status {
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: var(--muted);
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: #edf2f7;
-    }
-
-    .recording-status.on {
-      color: #22543d;
-      background: #c6f6d5;
-    }
-
-    .recording-status.off {
-      color: #742a2a;
-      background: #fed7d7;
-    }
-
-    .speech-result-box {
-      background: #fff;
-      border: 2px dashed #cbd5e0;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
-      font-size: 1rem;
-      color: #4a5568;
-      min-height: 82px;
+    .answer-guide {
+      background: var(--soft-green);
+      border: 1px solid #9ae6b4;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 12px 0;
+      font-size: 0.9rem;
+      line-height: 1.65;
       text-align: left;
-      line-height: 1.45;
-      white-space: pre-wrap;
     }
 
-    .speech-label {
-      font-size: 0.82rem;
-      color: var(--muted);
-      text-align: left;
-      margin-bottom: 4px;
-      font-weight: 700;
+    .answer-guide ol {
+      margin: 6px 0 0 20px;
+      padding: 0;
     }
 
     .button-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button-row.three {
+      grid-template-columns: 1fr 1fr 1fr;
     }
 
     button {
       border: none;
       border-radius: 999px;
-      cursor: pointer;
+      padding: 12px 16px;
+      font-size: 0.98rem;
       font-weight: 800;
-      transition: transform 0.12s ease, background 0.18s ease, opacity 0.18s ease;
+      cursor: pointer;
+      transition: transform .05s ease, background .2s ease, opacity .2s ease;
+      font-family: inherit;
     }
 
-    button:hover { transform: translateY(-1px); }
-    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
 
-    .btn {
-      background: var(--primary);
-      color: white;
-      padding: 13px 18px;
-      font-size: 1rem;
-      width: 100%;
-    }
-
-    .btn:hover { background: var(--primary-dark); }
-
-    .btn-secondary { background: #718096; }
-    .btn-secondary:hover { background: #4a5568; }
-
-    .btn-success { background: var(--success); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: white; }
     .btn-success:hover { background: var(--success-dark); }
+    .btn-gray { background: #718096; color: white; }
+    .btn-gray:hover { background: #4a5568; }
+    .btn-warning { background: #ed8936; color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-light { background: #edf2f7; color: #2d3748; }
 
-    .btn-danger { background: var(--danger); }
-    .btn-danger:hover { background: #c53030; }
-
-    .btn-ghost {
-      background: #edf2f7;
-      color: #2d3748;
-      padding: 10px 14px;
-      font-size: 0.92rem;
+    .side-section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--line);
     }
 
-    .small-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
+    .side-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    .small-text {
+      font-size: 0.84rem;
+      line-height: 1.65;
+      color: var(--muted);
+      margin: 6px 0 0;
     }
 
-    .feedback-box {
-      display: none;
-      background: #f8fafc;
+    .question-list {
+      max-height: 260px;
+      overflow: auto;
       border: 1px solid var(--line);
       border-radius: 14px;
-      padding: 16px;
-      margin-top: 16px;
-      text-align: left;
-    }
-
-    .notice {
-      background: var(--soft-yellow);
-      border: 1px solid #fbd38d;
-      color: #744210;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      margin-bottom: 14px;
-    }
-
-    .gemini-guide {
-      background: var(--soft-green);
-      border: 1px solid var(--success);
-      padding: 14px;
-      border-radius: 14px;
-      margin-bottom: 16px;
-    }
-
-    .step {
-      background: #fff;
-      border-left: 4px solid var(--success);
-      padding: 9px 10px;
-      margin: 8px 0;
-      font-size: 0.9rem;
-      border-radius: 0 10px 10px 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-
-    .answer-card {
-      border-bottom: 1px dashed #cbd5e0;
-      padding: 13px 0;
-    }
-
-    .answer-card:last-child { border-bottom: none; }
-
-    .answer-title {
-      font-weight: 900;
-      color: var(--primary);
-      line-height: 1.45;
-      margin-bottom: 8px;
-    }
-
-    .answer-text {
-      background: #fff;
-      border-left: 4px solid #cbd5e0;
-      padding: 9px 10px;
-      border-radius: 8px;
-      margin: 6px 0;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.5;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #edf2f7;
-      color: #4a5568;
-      font-size: 0.78rem;
-      font-weight: 800;
-      margin-right: 5px;
-    }
-
-    .prompt-area {
-      width: 100%;
-      min-height: 110px;
-      margin-top: 8px;
-      font-size: 0.86rem;
-    }
-
-    .library-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 280px;
-      overflow: auto;
-      padding-right: 4px;
+      padding: 8px;
+      background: #fbfdff;
     }
 
     .question-item {
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px;
-      text-align: left;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      padding: 9px;
+      border-radius: 10px;
+      border-bottom: 1px solid #edf2f7;
+      font-size: 0.88rem;
       line-height: 1.45;
     }
 
-    .question-item .q {
-      font-weight: 800;
-      font-size: 0.92rem;
+    .question-item:last-child { border-bottom: none; }
+    .question-item:hover { background: #f7fafc; }
+    .mini-tag {
+      display: inline-block;
+      color: white;
+      background: #4a5568;
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 0.7rem;
       margin-bottom: 4px;
     }
 
-    .question-item .meta {
-      font-size: 0.78rem;
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .question-item button {
-      border-radius: 8px;
-      padding: 5px 8px;
+    .icon-btn {
+      border-radius: 9px;
+      padding: 6px 9px;
       font-size: 0.78rem;
       background: #edf2f7;
-      color: #2d3748;
+      color: #4a5568;
+    }
+
+    .result-card {
+      background: #fbfdff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 10px 0;
+      text-align: left;
+    }
+
+    .result-card strong { color: var(--primary); }
+    .answer-display {
+      background: #fff;
+      border-left: 4px solid #cbd5e0;
+      padding: 9px 10px;
+      margin-top: 8px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
     }
 
     .hidden { display: none !important; }
 
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: #1a202c;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 99;
+      font-size: 0.9rem;
+    }
+
+    .toast.show { opacity: 1; }
+
     @media (max-width: 860px) {
       body { padding: 12px; }
       .app { grid-template-columns: 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
-      .small-actions { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+      .button-row, .button-row.three { grid-template-columns: 1fr; }
+      .question-text { font-size: 1.18rem; }
+      .timer { font-size: 1.7rem; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <main class="card main-card">
-      <h1>English Speaking & Gemini Review</h1>
-      <div class="subtitle">英会話練習 → 音声認識 → Gemini添削用プロンプト作成までを1画面で行えます。</div>
+    <main class="card">
+      <h1>Keyboard Dictation Speaking Practice</h1>
+      <p class="lead">iPadのキーボード音声入力を使う英会話練習アプリです。ブラウザ内の自動音声認識は使いません。</p>
 
-      <section id="settingsPanel" class="settings-panel">
-        <h2>⚙️ Practice Settings</h2>
+      <div class="notice">
+        <strong>生徒への指示：</strong>回答欄をタップ → キーボードを <strong>English</strong> に切り替え → マイクボタンを押す → 英語で話す → 間違っていたら自分で直す。
+      </div>
 
-        <div class="grid-2">
+      <section id="settingArea">
+        <div class="settings-grid">
           <div class="field">
             <label for="selectCategory">Category</label>
             <select id="selectCategory">
@@ -493,772 +366,457 @@
               <option value="School">School Life（学校生活・部活）</option>
               <option value="Travel">Travel & Culture（旅行・文化）</option>
               <option value="Opinion">Your Opinion（社会・意見）</option>
-              <option value="Interview">Academic/Job（面接・将来）</option>
-              <option value="Original">Original（オリジナル）</option>
+              <option value="Interview">Academic / Job（面接・将来）</option>
+              <option value="Original">Original（追加した質問）</option>
+              <option value="weak">Weak Questions（苦手問題）</option>
             </select>
           </div>
-
           <div class="field">
-            <label for="selectMode">Practice Mode</label>
-            <select id="selectMode">
-              <option value="random">Random Questions</option>
-              <option value="ordered">In Order</option>
-              <option value="weak">Review Weak/Blank Answers</option>
+            <label for="selectAi">添削に使うAI</label>
+            <select id="selectAi">
+              <option value="gemini">Geminiを開く</option>
+              <option value="chatgpt">ChatGPTを開く</option>
+              <option value="none">コピーだけする</option>
             </select>
           </div>
-
           <div class="field">
             <label for="inputCount">Questions</label>
             <input type="number" id="inputCount" value="3" min="1" max="20" />
           </div>
-
           <div class="field">
             <label for="inputTime">Time per question（秒）</label>
-            <input type="number" id="inputTime" value="45" min="10" max="300" />
-          </div>
-
-          <div class="field">
-            <label for="selectLang">Speech Recognition</label>
-            <select id="selectLang">
-              <option value="en-US">English - US</option>
-              <option value="en-GB">English - UK</option>
-              <option value="en-AU">English - Australia</option>
-              <option value="en-CA">English - Canada</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="selectGemini">Open AI tool</label>
-            <select id="selectGemini">
-              <option value="https://gemini.google.com/app">Gemini</option>
-              <option value="https://chatgpt.com/">ChatGPT</option>
-            </select>
+            <input type="number" id="inputTime" value="30" min="10" max="180" />
           </div>
         </div>
-
-        <div class="toggle-row">
-          <label for="showHint">質問ごとの日本語ヒントを表示</label>
-          <input type="checkbox" id="showHint" checked />
-        </div>
-        <div class="toggle-row">
-          <label for="autoNext">時間切れで自動的に次の質問へ進む</label>
-          <input type="checkbox" id="autoNext" />
-        </div>
-        <div class="toggle-row">
-          <label for="useCamera">カメラを使う</label>
-          <input type="checkbox" id="useCamera" checked />
-        </div>
-
-        <button id="startBtn" class="btn" type="button">Start Practice</button>
+        <button id="startBtn" class="btn-primary" type="button">Start Practice</button>
       </section>
 
-      <div id="statusBar" class="status-bar">
-        <div class="progress-wrap"><div id="progressFill" class="progress-fill"></div></div>
-        <div id="progressText" class="progress-text">0 / 0</div>
-      </div>
-
-      <div class="video-container">
-        <video id="webcamera" autoplay playsinline muted></video>
-        <div id="cameraOff" class="camera-off">
-          カメラはOFFです。<br />
-          音声練習だけでも利用できます。
+      <section id="practiceArea" class="hidden">
+        <div class="status-row">
+          <div id="progressText" class="progress">Q: 0 / 0</div>
+          <div id="timer" class="timer">00:30</div>
         </div>
-      </div>
 
-      <section id="questionBox" class="question-box">
-        <span class="category-tag">Ready</span>
-        <div id="questionText" class="question-text">Click “Start Practice” to begin!</div>
-        <div id="hintText" class="hint-text"></div>
+        <div class="question-box">
+          <span id="categoryTag" class="tag">Category</span>
+          <div id="questionText" class="question-text">Question</div>
+          <div id="adviceText" class="jp-hint"></div>
+        </div>
+
+        <div class="answer-guide">
+          <strong>入力方法</strong>
+          <ol>
+            <li>下の回答欄をタップします。</li>
+            <li>iPadキーボードの地球儀で <strong>English</strong> にします。</li>
+            <li>マイクボタンを押して英語で話します。</li>
+            <li>聞き取りが違うところは、自分で直します。</li>
+          </ol>
+        </div>
+
+        <div class="field">
+          <label for="answerInput">Your Answer</label>
+          <textarea id="answerInput" placeholder="ここをタップして、キーボードのマイクボタンから英語で答えてください。例：I like playing tennis because it is exciting."></textarea>
+        </div>
+
+        <div class="button-row three">
+          <button id="clearBtn" class="btn-light" type="button">Clear Answer</button>
+          <button id="retryBtn" class="btn-warning" type="button">Retry Same Q</button>
+          <button id="nextBtn" class="btn-primary" type="button">Next Question</button>
+        </div>
+        <div class="button-row">
+          <button id="pauseBtn" class="btn-gray" type="button">Pause Timer</button>
+          <button id="finishBtn" class="btn-success" type="button">Finish & Review</button>
+        </div>
       </section>
 
-      <div class="timer-row">
-        <div id="timer" class="timer">00:45</div>
-        <div id="recordingStatus" class="recording-status off">Mic: standby</div>
-      </div>
-
-      <div id="speechArea">
-        <div class="speech-label">🎙️ あなたが話した英語・または手入力で修正</div>
-        <textarea id="speechResult" class="speech-result-box" placeholder="ここに音声認識の結果が表示されます。うまく認識されない場合は、ここに直接入力・修正できます。"></textarea>
-      </div>
-
-      <div class="button-row">
-        <button id="nextBtn" class="btn" type="button" disabled>Next Question</button>
-        <button id="finishBtn" class="btn btn-secondary" type="button" disabled>Finish & See Feedback</button>
-      </div>
-
-      <div class="small-actions">
-        <button id="pauseBtn" class="btn-ghost" type="button" disabled>⏸ Pause</button>
-        <button id="retryBtn" class="btn-ghost" type="button" disabled>🔁 Retry This Question</button>
-        <button id="clearBtn" class="btn-ghost" type="button">🧹 Clear Answer</button>
-      </div>
-
-      <section id="feedbackArea" class="feedback-box"></section>
+      <section id="feedbackArea" class="hidden"></section>
     </main>
 
     <aside class="card">
-      <h2>📝 Question Library</h2>
-      <div class="notice">
-        オリジナル質問を追加できます。授業前に質問を登録しておくと、同じHTMLファイルだけで繰り返し使えます。
+      <div class="side-section">
+        <h2>iPadでうまく使うコツ</h2>
+        <p class="small-text">
+          英語で音声入力する時は、必ず英語キーボードに切り替えてからマイクを押してください。日本語キーボードのままだと、英語がカタカナや日本語として認識されやすくなります。
+        </p>
       </div>
 
-      <div class="field">
-        <label for="newCat">Category</label>
-        <select id="newCat">
-          <option value="Daily">Daily</option>
-          <option value="School">School</option>
-          <option value="Travel">Travel</option>
-          <option value="Opinion">Opinion</option>
-          <option value="Interview">Interview</option>
-          <option value="Original">Original</option>
-        </select>
+      <div class="side-section">
+        <h2>Original Questions</h2>
+        <div class="field">
+          <label for="newQuestion">追加したい質問</label>
+          <textarea id="newQuestion" style="min-height:90px;" placeholder="例：What do you want to do in the future?"></textarea>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label for="newAdvice">日本語ヒント</label>
+          <input id="newAdvice" placeholder="例：理由を2つ入れて答えましょう。" />
+        </div>
+        <button id="addQuestionBtn" class="btn-primary" style="margin-top:10px; width:100%;" type="button">Add Original Question</button>
       </div>
 
-      <div class="field">
-        <label for="newQuestion">New question</label>
-        <textarea id="newQuestion" placeholder="例: What kind of job would you like to do in the future?"></textarea>
+      <div class="side-section">
+        <h2>Question List</h2>
+        <div id="questionList" class="question-list"></div>
       </div>
 
-      <div class="field">
-        <label for="newAdvice">Japanese hint / advice</label>
-        <textarea id="newAdvice" placeholder="例: 仕事名だけでなく、なぜその仕事に興味があるのかを説明しましょう。"></textarea>
+      <div class="side-section">
+        <h2>Teacher Notes</h2>
+        <p class="small-text">
+          この版ではWeb Speech APIを使わないため、ブラウザ側の聞き取り失敗に左右されにくくなります。生徒は「話す→文字化→自分で修正→AI添削」の流れで練習します。
+        </p>
       </div>
-
-      <div class="button-row">
-        <button id="addQuestionBtn" class="btn btn-success" type="button">Add</button>
-        <button id="resetQuestionsBtn" class="btn btn-secondary" type="button">Reset</button>
-      </div>
-
-      <hr style="border:none; border-top:1px solid var(--line); margin:18px 0;" />
-
-      <div class="field">
-        <label for="searchQuestion">Search</label>
-        <input id="searchQuestion" placeholder="質問を検索" />
-      </div>
-
-      <div id="questionLibrary" class="library-list"></div>
     </aside>
   </div>
 
-  <script>
-    "use strict";
+  <div id="toast" class="toast">Copied!</div>
 
-    const DEFAULT_QUESTIONS = [
-      { cat: "Daily", q: "Could you please tell me about your hometown?", advice: "場所の説明だけでなく、何が有名か、何をするのがおすすめかを付け加えましょう。" },
-      { cat: "Daily", q: "What do you like to do in your free time?", advice: "趣味を答えた後、「なぜそれが好きなのか」「どれくらいの頻度でやるのか」まで広げましょう。" },
-      { cat: "Daily", q: "What is your favorite food, and why?", advice: "好きな食べ物を言った後、味・思い出・誰と食べるかなどを加えると自然です。" },
-      { cat: "School", q: "What is your favorite school subject, and why?", advice: "「〇〇が好き」の後に、具体的な理由を Because でつなげましょう。" },
-      { cat: "School", q: "Tell me about your school club or any school events you like.", advice: "部活動や行事の思い出です。過去形 I enjoyed / We practiced などを使いましょう。" },
-      { cat: "School", q: "What is one thing you want to improve at school?", advice: "苦手なことだけでなく、どのように改善したいかまで話しましょう。" },
-      { cat: "Travel", q: "If you could visit any country, where would you like to go?", advice: "行きたい国を挙げ、そこで見たいもの・体験したいことを説明しましょう。" },
-      { cat: "Travel", q: "What place in Japan would you recommend to foreign visitors?", advice: "場所・おすすめ理由・具体的な活動の3点で話すとまとまります。" },
-      { cat: "Opinion", q: "Do you think students should wear school uniforms?", advice: "まず I think / I don't think で立場を明確にし、理由を2つ言えるとよいです。" },
-      { cat: "Opinion", q: "Do you think smartphones are helpful for students?", advice: "良い点と注意点の両方に触れると、説得力が増します。" },
-      { cat: "Interview", q: "Why are you interested in studying at this school?", advice: "学校の強みと自分の将来の目標を結びつけて話しましょう。" },
-      { cat: "Interview", q: "What is your strength, and how have you used it?", advice: "長所を1つ選び、具体的な経験を短く説明しましょう。" },
-      { cat: "Original", q: "Welcome to our class! Please introduce yourself briefly.", advice: "名前、好きなこと、最近頑張っていることをハキハキ話しましょう。" }
-    ];
+<script>
+  const defaultQuestions = [
+    { cat: "Daily", q: "Could you please tell me about your hometown?", advice: "場所の説明だけでなく、何が有名か、何をするのがおすすめかを付け加えましょう。" },
+    { cat: "Daily", q: "What do you like to do in your free time?", advice: "趣味を答えた後、なぜ好きなのか、どれくらいの頻度でやるのかまで広げましょう。" },
+    { cat: "Daily", q: "Please introduce yourself briefly.", advice: "名前、好きなこと、得意なこと、目標などを2〜3文で言いましょう。" },
+    { cat: "School", q: "What is your favorite school subject, and why?", advice: "好きな教科を答えた後、Becauseで理由を具体的に言いましょう。" },
+    { cat: "School", q: "Tell me about your school club or a school event you enjoyed.", advice: "過去の経験なので、I enjoyed / We practiced / I learned などを使いましょう。" },
+    { cat: "School", q: "What is one thing you want to improve in your school life?", advice: "改善したいことと、そのために何をするかを述べましょう。" },
+    { cat: "Travel", q: "If you could visit any country, where would you like to go?", advice: "行きたい国、見たいもの、体験したいことを入れましょう。" },
+    { cat: "Travel", q: "What Japanese place would you recommend to foreign visitors?", advice: "おすすめの場所と、その理由を2つ言えるとよいです。" },
+    { cat: "Opinion", q: "Do you think students should wear school uniforms?", advice: "I think / I do not think で立場を明確にして、理由を述べましょう。" },
+    { cat: "Opinion", q: "Do you think AI is useful for students?", advice: "便利な点と注意すべき点の両方に触れるとよいです。" },
+    { cat: "Interview", q: "Why are you interested in studying at this school?", advice: "学校の特徴と自分の将来の目標を結びつけましょう。" },
+    { cat: "Interview", q: "What do you want to do in the future?", advice: "将来の夢、理由、今努力していることを入れましょう。" }
+  ];
 
-    const STORAGE_KEYS = {
-      questions: "speakingApp.questions.v2",
-      settings: "speakingApp.settings.v2",
-      weak: "speakingApp.weakQuestions.v2"
+  const STORAGE_KEY = "keyboardDictationSpeakingApp.v1";
+  const WEAK_KEY = "keyboardDictationSpeakingApp.weakQuestions.v1";
+
+  const els = {
+    settingArea: document.getElementById("settingArea"),
+    practiceArea: document.getElementById("practiceArea"),
+    feedbackArea: document.getElementById("feedbackArea"),
+    selectCategory: document.getElementById("selectCategory"),
+    selectAi: document.getElementById("selectAi"),
+    inputCount: document.getElementById("inputCount"),
+    inputTime: document.getElementById("inputTime"),
+    startBtn: document.getElementById("startBtn"),
+    progressText: document.getElementById("progressText"),
+    timer: document.getElementById("timer"),
+    categoryTag: document.getElementById("categoryTag"),
+    questionText: document.getElementById("questionText"),
+    adviceText: document.getElementById("adviceText"),
+    answerInput: document.getElementById("answerInput"),
+    clearBtn: document.getElementById("clearBtn"),
+    retryBtn: document.getElementById("retryBtn"),
+    nextBtn: document.getElementById("nextBtn"),
+    pauseBtn: document.getElementById("pauseBtn"),
+    finishBtn: document.getElementById("finishBtn"),
+    newQuestion: document.getElementById("newQuestion"),
+    newAdvice: document.getElementById("newAdvice"),
+    addQuestionBtn: document.getElementById("addQuestionBtn"),
+    questionList: document.getElementById("questionList"),
+    toast: document.getElementById("toast")
+  };
+
+  let customQuestions = [];
+  let weakQuestions = [];
+  let currentQuestions = [];
+  let answers = [];
+  let currentIndex = 0;
+  let maxTime = 30;
+  let timeLeft = 30;
+  let timerId = null;
+  let paused = false;
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function shuffle(array) {
+    return [...array].sort(() => Math.random() - 0.5);
+  }
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      customQuestions = Array.isArray(saved.customQuestions) ? saved.customQuestions : [];
+      if (saved.category) els.selectCategory.value = saved.category;
+      if (saved.ai) els.selectAi.value = saved.ai;
+      if (saved.count) els.inputCount.value = saved.count;
+      if (saved.time) els.inputTime.value = saved.time;
+    } catch (e) {
+      customQuestions = [];
+    }
+    try {
+      weakQuestions = JSON.parse(localStorage.getItem(WEAK_KEY) || "[]");
+      if (!Array.isArray(weakQuestions)) weakQuestions = [];
+    } catch (e) {
+      weakQuestions = [];
+    }
+  }
+
+  function saveState() {
+    const state = {
+      customQuestions,
+      category: els.selectCategory.value,
+      ai: els.selectAi.value,
+      count: els.inputCount.value,
+      time: els.inputTime.value
     };
-
-    const $ = (id) => document.getElementById(id);
-
-    let questionsDatabase = loadQuestions();
-    let currentQuestions = [];
-    let currentQuestionIndex = 0;
-    let timerInterval = null;
-    let timeLeft = 45;
-    let maxTimePerQuestion = 45;
-    let history = [];
-    let finalTranscript = "";
-    let isPaused = false;
-    let isRunning = false;
-    let cameraStream = null;
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition = null;
-
-    function escapeHTML(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function normalizeText(value) {
-      return String(value || "").replace(/\s+/g, " ").trim();
-    }
-
-    function shuffle(array) {
-      return array
-        .map((value) => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value);
-    }
-
-    function loadQuestions() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.questions));
-        if (Array.isArray(saved) && saved.length > 0) return saved;
-      } catch (e) {
-        console.warn("Question loading failed:", e);
-      }
-      return [...DEFAULT_QUESTIONS];
-    }
-
-    function saveQuestions() {
-      localStorage.setItem(STORAGE_KEYS.questions, JSON.stringify(questionsDatabase));
-    }
-
-    function loadSettings() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.settings)) || {};
-        for (const [key, value] of Object.entries(saved)) {
-          const el = $(key);
-          if (!el) continue;
-          if (el.type === "checkbox") el.checked = Boolean(value);
-          else el.value = value;
-        }
-      } catch (e) {
-        console.warn("Settings loading failed:", e);
-      }
-    }
-
-    function saveSettings() {
-      const settingIds = ["selectCategory", "selectMode", "inputCount", "inputTime", "selectLang", "selectGemini", "showHint", "autoNext", "useCamera"];
-      const data = {};
-      settingIds.forEach((id) => {
-        const el = $(id);
-        data[id] = el.type === "checkbox" ? el.checked : el.value;
-      });
-      localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(data));
-    }
-
-    function getWeakQuestionSet() {
-      try {
-        return new Set(JSON.parse(localStorage.getItem(STORAGE_KEYS.weak)) || []);
-      } catch {
-        return new Set();
-      }
-    }
-
-    function saveWeakQuestionSet(set) {
-      localStorage.setItem(STORAGE_KEYS.weak, JSON.stringify([...set]));
-    }
-
-    function initRecognition() {
-      if (!SpeechRecognition) {
-        $("recordingStatus").textContent = "Mic: not supported";
-        $("recordingStatus").className = "recording-status off";
-        return;
-      }
-
-      recognition = new SpeechRecognition();
-      recognition.lang = $("selectLang").value;
-      recognition.interimResults = true;
-      recognition.continuous = true;
-
-      recognition.onstart = () => {
-        $("recordingStatus").textContent = "Mic: listening";
-        $("recordingStatus").className = "recording-status on";
-      };
-
-      recognition.onend = () => {
-        if (isRunning && !isPaused && timeLeft > 0) {
-          try {
-            recognition.start();
-          } catch (e) {
-            // Browser may reject rapid restarts. This is harmless.
-          }
-        } else {
-          $("recordingStatus").textContent = "Mic: stopped";
-          $("recordingStatus").className = "recording-status off";
-        }
-      };
-
-      recognition.onerror = (event) => {
-        $("recordingStatus").textContent = `Mic: ${event.error}`;
-        $("recordingStatus").className = "recording-status off";
-      };
-
-      recognition.onresult = (event) => {
-        let interimTranscript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript + " ";
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-
-        const fullText = normalizeText(finalTranscript + " " + interimTranscript);
-        $("speechResult").value = fullText;
-        syncCurrentAnswer();
-      };
-    }
-
-    async function initCamera() {
-      const useCamera = $("useCamera").checked;
-      $("cameraOff").style.display = useCamera ? "none" : "flex";
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        $("cameraOff").style.display = "flex";
-        $("cameraOff").innerHTML = "このブラウザではカメラ機能が利用できません。<br>音声練習のみ利用してください。";
-        return;
-      }
-
-      if (!useCamera) {
-        stopCamera();
-        return;
-      }
-
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        $("webcamera").srcObject = cameraStream;
-      } catch (err) {
-        $("cameraOff").style.display = "flex";
-        $("cameraOff").innerHTML = "カメラへのアクセスが許可されていません。<br>ブラウザの設定を確認してください。";
-      }
-    }
-
-    function stopCamera() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((track) => track.stop());
-        cameraStream = null;
-      }
-      $("webcamera").srcObject = null;
-    }
-
-    function chooseQuestions() {
-      const category = $("selectCategory").value;
-      const mode = $("selectMode").value;
-      const requestedCount = Math.max(1, Math.min(20, parseInt($("inputCount").value, 10) || 3));
-
-      let pool = [...questionsDatabase];
-
-      if (category !== "all") {
-        pool = pool.filter((item) => item.cat === category);
-      }
-
-      if (mode === "weak") {
-        const weakSet = getWeakQuestionSet();
-        const weakPool = pool.filter((item) => weakSet.has(item.q));
-        if (weakPool.length > 0) pool = weakPool;
-      }
-
-      if (mode === "random") {
-        pool = shuffle(pool);
-      }
-
-      return pool.slice(0, Math.min(requestedCount, pool.length));
-    }
-
-    function startPractice() {
-      saveSettings();
-      currentQuestions = chooseQuestions();
-
-      if (currentQuestions.length === 0) {
-        alert("この条件に合う質問がありません。Category または Practice Mode を変更してください。");
-        return;
-      }
-
-      currentQuestionIndex = 0;
-      history = [];
-      finalTranscript = "";
-      isPaused = false;
-      isRunning = true;
-      maxTimePerQuestion = Math.max(10, Math.min(300, parseInt($("inputTime").value, 10) || 45));
-
-      $("settingsPanel").classList.add("hidden");
-      $("feedbackArea").style.display = "none";
-      $("statusBar").style.display = "grid";
-      $("nextBtn").disabled = false;
-      $("finishBtn").disabled = false;
-      $("pauseBtn").disabled = false;
-      $("retryBtn").disabled = false;
-      $("pauseBtn").textContent = "⏸ Pause";
-
-      initRecognition();
-      showQuestion();
-    }
-
-    function showQuestion() {
-      clearInterval(timerInterval);
-
-      if (currentQuestionIndex >= currentQuestions.length) {
-        finishPractice(false);
-        return;
-      }
-
-      finalTranscript = "";
-      $("speechResult").value = "";
-      isPaused = false;
-      $("pauseBtn").textContent = "⏸ Pause";
-
-      const current = currentQuestions[currentQuestionIndex];
-      if (!history[currentQuestionIndex]) {
-        history[currentQuestionIndex] = {
-          q: current.q,
-          cat: current.cat,
-          advice: current.advice,
-          userAnswer: "",
-          timeUsed: 0
-        };
-      }
-
-      $("questionBox").innerHTML = `
-        <span class="category-tag">${escapeHTML(current.cat)}</span>
-        <div id="questionText" class="question-text">${escapeHTML(current.q)}</div>
-        <div id="hintText" class="hint-text">${escapeHTML(current.advice || "")}</div>
-      `;
-
-      $("hintText").style.display = $("showHint").checked ? "block" : "none";
-      $("nextBtn").textContent = currentQuestionIndex === currentQuestions.length - 1 ? "Finish" : "Next Question";
-
-      updateProgress();
-      timeLeft = maxTimePerQuestion;
-      updateTimerDisplay();
-      startRecognitionSafely();
-
-      timerInterval = setInterval(() => {
-        if (isPaused) return;
-
-        timeLeft--;
-        syncCurrentAnswer();
-        updateTimerDisplay();
-
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          stopRecognitionSafely();
-          $("timer").textContent = "Time's up!";
-          if ($("autoNext").checked) {
-            setTimeout(nextQuestion, 900);
-          }
-        }
-      }, 1000);
-    }
-
-    function updateProgress() {
-      const total = currentQuestions.length;
-      const current = Math.min(currentQuestionIndex + 1, total);
-      $("progressText").textContent = `${current} / ${total}`;
-      $("progressFill").style.width = `${(current / total) * 100}%`;
-    }
-
-    function updateTimerDisplay() {
-      const minutes = Math.floor(Math.max(timeLeft, 0) / 60);
-      const seconds = Math.max(timeLeft, 0) % 60;
-      $("timer").textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-      if (timeLeft <= 10) $("timer").style.color = "var(--danger)";
-      else $("timer").style.color = "var(--warning)";
-    }
-
-    function syncCurrentAnswer() {
-      const currentHistory = history[currentQuestionIndex];
-      if (!currentHistory) return;
-      currentHistory.userAnswer = normalizeText($("speechResult").value);
-      currentHistory.timeUsed = Math.max(0, maxTimePerQuestion - timeLeft);
-    }
-
-    function startRecognitionSafely() {
-      if (!recognition || isPaused || !isRunning) return;
-      try {
-        recognition.lang = $("selectLang").value;
-        recognition.start();
-      } catch (e) {
-        // start() may fail if already started. Ignore.
-      }
-    }
-
-    function stopRecognitionSafely() {
-      if (!recognition) return;
-      try {
-        recognition.stop();
-      } catch (e) {
-        // stop() may fail if already stopped. Ignore.
-      }
-    }
-
-    function nextQuestion() {
-      syncCurrentAnswer();
-      stopRecognitionSafely();
-
-      if (currentQuestionIndex >= currentQuestions.length - 1) {
-        finishPractice(false);
-        return;
-      }
-
-      currentQuestionIndex++;
-      setTimeout(showQuestion, 120);
-    }
-
-    function retryQuestion() {
-      const ok = confirm("この質問の回答を消して、もう一度やり直しますか？");
-      if (!ok) return;
-
-      finalTranscript = "";
-      if (history[currentQuestionIndex]) {
-        history[currentQuestionIndex].userAnswer = "";
-        history[currentQuestionIndex].timeUsed = 0;
-      }
-      $("speechResult").value = "";
-      showQuestion();
-    }
-
-    function pauseOrResume() {
-      if (!isRunning) return;
-
-      isPaused = !isPaused;
-      if (isPaused) {
-        stopRecognitionSafely();
-        $("pauseBtn").textContent = "▶ Resume";
-        $("recordingStatus").textContent = "Mic: paused";
-        $("recordingStatus").className = "recording-status off";
-      } else {
-        $("pauseBtn").textContent = "⏸ Pause";
-        startRecognitionSafely();
-      }
-    }
-
-    function finishPractice(isInterrupted) {
-      syncCurrentAnswer();
-      clearInterval(timerInterval);
-      stopRecognitionSafely();
-
-      isRunning = false;
-      isPaused = false;
-
-      $("settingsPanel").classList.remove("hidden");
-      $("statusBar").style.display = "none";
-      $("nextBtn").disabled = true;
-      $("finishBtn").disabled = true;
-      $("pauseBtn").disabled = true;
-      $("retryBtn").disabled = true;
-      $("timer").textContent = "00:00";
-      $("questionBox").innerHTML = `
-        <span class="category-tag">Finished</span>
-        <div class="question-text">Great job! Practice completed.</div>
-      `;
-
-      markWeakQuestions();
-      renderFeedback(isInterrupted);
-      renderQuestionLibrary();
-    }
-
-    function markWeakQuestions() {
-      const weakSet = getWeakQuestionSet();
-
-      history.forEach((item) => {
-        const words = normalizeText(item.userAnswer).split(" ").filter(Boolean);
-        if (words.length < 5) {
-          weakSet.add(item.q);
-        } else {
-          weakSet.delete(item.q);
-        }
-      });
-
-      saveWeakQuestionSet(weakSet);
-    }
-
-    function buildAllPrompt() {
-      const levelInstruction = "高校生にも分かる日本語で、やさしく具体的に説明してください。";
-      let prompt = `私は英語スピーキング練習をしました。以下の質問と私の英語回答を添削してください。\n\n【お願い】\n1. 文法・語法のミスを直してください。\n2. 元の意味をなるべく残した自然な英文にしてください。\n3. さらに良い表現を2つ提案してください。\n4. 良かった点を1つ、次に気をつける点を1つ教えてください。\n5. ${levelInstruction}\n\n`;
-
-      history.forEach((item, index) => {
-        prompt += `【質問${index + 1}】${item.q}\n`;
-        prompt += `【私の回答】${item.userAnswer || "無回答"}\n\n`;
-      });
-
-      return prompt;
-    }
-
-    function buildSinglePrompt(item) {
-      return `私は英語スピーキング練習をしています。\n\n【質問】${item.q}\n【私の回答】${item.userAnswer || "無回答"}\n\nこの回答について、文法ミスを直し、元の意味をなるべく残した自然な英文にしてください。さらに、高校生が面接や英会話で使いやすい別表現を3つ、日本語解説付きで教えてください。`;
-    }
-
-    async function copyText(text, btn) {
-      try {
-        await navigator.clipboard.writeText(text);
-        const original = btn.textContent;
-        btn.textContent = "コピーしました";
-        setTimeout(() => { btn.textContent = original; }, 1400);
-        return true;
-      } catch (e) {
-        alert("自動コピーに失敗しました。表示された文章を手動でコピーしてください。");
-        return false;
-      }
-    }
-
-    async function copyAndOpen(text, btn) {
-      await copyText(text, btn);
-      window.open($("selectGemini").value, "_blank", "noopener,noreferrer");
-    }
-
-    function renderFeedback(isInterrupted) {
-      const feedbackArea = $("feedbackArea");
-      feedbackArea.style.display = "block";
-
-      const answered = history.filter((item) => normalizeText(item.userAnswer).length > 0).length;
-      const totalWords = history.reduce((sum, item) => {
-        return sum + normalizeText(item.userAnswer).split(" ").filter(Boolean).length;
-      }, 0);
-      const allPrompt = buildAllPrompt();
-
-      let html = `
-        <h2>${isInterrupted ? "Review（途中終了）" : "🎉 Review & AI添削"}</h2>
-        <div class="notice">
-          <span class="badge">回答数 ${answered}/${history.length}</span>
-          <span class="badge">合計語数 ${totalWords}</span>
-          <span class="badge">苦手判定 5語未満</span>
-          <br>音声認識が不十分な場合は、上の回答欄を修正してからもう一度 Finish を押すと、プロンプトに反映できます。
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function saveWeakQuestions() {
+    localStorage.setItem(WEAK_KEY, JSON.stringify(weakQuestions.slice(0, 50)));
+  }
+
+  function allQuestions() {
+    return [...defaultQuestions, ...customQuestions];
+  }
+
+  function renderQuestionList() {
+    const list = allQuestions();
+    els.questionList.innerHTML = "";
+    list.forEach((item, index) => {
+      const isCustom = index >= defaultQuestions.length;
+      const row = document.createElement("div");
+      row.className = "question-item";
+      row.innerHTML = `
+        <div>
+          <span class="mini-tag">${escapeHtml(item.cat)}</span><br>
+          ${escapeHtml(item.q)}
         </div>
-
-        <div class="gemini-guide">
-          <strong>💡 添削の手順</strong>
-          <div class="step"><b>①</b> 緑色のボタンで全問分の添削依頼文をコピー</div>
-          <div class="step"><b>②</b> Gemini または ChatGPT の入力欄に貼り付け</div>
-          <div class="step"><b>③</b> 送信して添削結果を確認</div>
-          <button id="copyAllBtn" class="btn btn-success" type="button">🟢 全問まとめてコピーしてAIを開く</button>
-          <textarea id="allPromptPreview" class="prompt-area" readonly>${escapeHTML(allPrompt)}</textarea>
-        </div>
+        ${isCustom ? `<button class="icon-btn" type="button" data-custom-index="${index - defaultQuestions.length}">Delete</button>` : ""}
       `;
-
-      history.forEach((item, index) => {
-        const prompt = buildSinglePrompt(item);
-        const answer = item.userAnswer || "（聞き取れませんでした／未回答）";
-        html += `
-          <div class="answer-card">
-            <div class="answer-title">Q${index + 1}: ${escapeHTML(item.q)}</div>
-            <div><span class="badge">${escapeHTML(item.cat)}</span><span class="badge">${escapeHTML(String(item.timeUsed || 0))} 秒</span></div>
-            <div class="answer-text">🗣️ ${escapeHTML(answer)}</div>
-            <textarea id="singlePrompt${index}" class="prompt-area" readonly>${escapeHTML(prompt)}</textarea>
-            <button class="btn-ghost single-copy" data-index="${index}" type="button">🔵 Q${index + 1}だけコピーしてAIを開く</button>
-          </div>
-        `;
-      });
-
-      feedbackArea.innerHTML = html;
-
-      $("copyAllBtn").addEventListener("click", (event) => copyAndOpen(allPrompt, event.currentTarget));
-
-      document.querySelectorAll(".single-copy").forEach((btn) => {
-        btn.addEventListener("click", (event) => {
-          const index = Number(event.currentTarget.dataset.index);
-          copyAndOpen(buildSinglePrompt(history[index]), event.currentTarget);
-        });
-      });
-    }
-
-    function addQuestion() {
-      const cat = $("newCat").value;
-      const q = normalizeText($("newQuestion").value);
-      const advice = normalizeText($("newAdvice").value);
-
-      if (!q) {
-        alert("質問を入力してください。");
-        return;
-      }
-
-      questionsDatabase.push({
-        cat,
-        q,
-        advice: advice || "理由や具体例を加えて、2〜3文で答えてみましょう。"
-      });
-
-      $("newQuestion").value = "";
-      $("newAdvice").value = "";
-      saveQuestions();
-      renderQuestionLibrary();
-    }
-
-    function deleteQuestion(index) {
-      const ok = confirm("この質問を削除しますか？");
-      if (!ok) return;
-      questionsDatabase.splice(index, 1);
-      saveQuestions();
-      renderQuestionLibrary();
-    }
-
-    function resetQuestions() {
-      const ok = confirm("質問リストを初期状態に戻しますか？追加した質問は消えます。");
-      if (!ok) return;
-
-      questionsDatabase = [...DEFAULT_QUESTIONS];
-      saveQuestions();
-      saveWeakQuestionSet(new Set());
-      renderQuestionLibrary();
-    }
-
-    function renderQuestionLibrary() {
-      const keyword = normalizeText($("searchQuestion").value).toLowerCase();
-      const weakSet = getWeakQuestionSet();
-
-      $("questionLibrary").innerHTML = "";
-
-      questionsDatabase.forEach((item, index) => {
-        const haystack = `${item.cat} ${item.q} ${item.advice}`.toLowerCase();
-        if (keyword && !haystack.includes(keyword)) return;
-
-        const div = document.createElement("div");
-        div.className = "question-item";
-        div.innerHTML = `
-          <div class="q">${escapeHTML(item.q)}</div>
-          <div class="meta">
-            <span>${escapeHTML(item.cat)} ${weakSet.has(item.q) ? "・Weak" : ""}</span>
-            <button type="button" data-index="${index}">Delete</button>
-          </div>
-        `;
-        div.querySelector("button").addEventListener("click", () => deleteQuestion(index));
-        $("questionLibrary").appendChild(div);
-      });
-    }
-
-    function bindEvents() {
-      $("startBtn").addEventListener("click", startPractice);
-      $("nextBtn").addEventListener("click", nextQuestion);
-      $("finishBtn").addEventListener("click", () => finishPractice(true));
-      $("pauseBtn").addEventListener("click", pauseOrResume);
-      $("retryBtn").addEventListener("click", retryQuestion);
-      $("clearBtn").addEventListener("click", () => {
-        $("speechResult").value = "";
-        finalTranscript = "";
-        syncCurrentAnswer();
-      });
-
-      $("speechResult").addEventListener("input", syncCurrentAnswer);
-      $("addQuestionBtn").addEventListener("click", addQuestion);
-      $("resetQuestionsBtn").addEventListener("click", resetQuestions);
-      $("searchQuestion").addEventListener("input", renderQuestionLibrary);
-
-      ["selectCategory", "selectMode", "inputCount", "inputTime", "selectLang", "selectGemini", "showHint", "autoNext", "useCamera"].forEach((id) => {
-        $(id).addEventListener("change", () => {
-          saveSettings();
-          if (id === "useCamera") initCamera();
-          if (id === "showHint" && $("hintText")) {
-            $("hintText").style.display = $("showHint").checked ? "block" : "none";
-          }
-        });
-      });
-
-      window.addEventListener("beforeunload", () => {
-        clearInterval(timerInterval);
-        stopRecognitionSafely();
-        stopCamera();
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      loadSettings();
-      bindEvents();
-      renderQuestionLibrary();
-      initCamera();
-      updateTimerDisplay();
+      els.questionList.appendChild(row);
     });
-  </script>
+
+    els.questionList.querySelectorAll("button[data-custom-index]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.dataset.customIndex);
+        customQuestions.splice(i, 1);
+        saveState();
+        renderQuestionList();
+        showToast("質問を削除しました");
+      });
+    });
+  }
+
+  function startPractice() {
+    saveState();
+    const category = els.selectCategory.value;
+    const requestedCount = Math.max(1, Math.min(20, Number(els.inputCount.value) || 3));
+    maxTime = Math.max(10, Math.min(180, Number(els.inputTime.value) || 30));
+
+    let pool = category === "weak" ? weakQuestions : allQuestions();
+    if (category !== "all" && category !== "weak") {
+      pool = pool.filter(item => item.cat === category);
+    }
+
+    if (pool.length === 0) {
+      showToast(category === "weak" ? "苦手問題はまだありません" : "このカテゴリの質問がありません");
+      return;
+    }
+
+    currentQuestions = shuffle(pool).slice(0, Math.min(requestedCount, pool.length));
+    answers = currentQuestions.map(item => ({ ...item, answer: "" }));
+    currentIndex = 0;
+
+    els.settingArea.classList.add("hidden");
+    els.feedbackArea.classList.add("hidden");
+    els.practiceArea.classList.remove("hidden");
+    showQuestion();
+  }
+
+  function showQuestion() {
+    saveCurrentAnswer();
+    if (currentIndex >= currentQuestions.length) {
+      finishPractice();
+      return;
+    }
+    const item = currentQuestions[currentIndex];
+    els.progressText.textContent = `Q: ${currentIndex + 1} / ${currentQuestions.length}`;
+    els.categoryTag.textContent = item.cat;
+    els.questionText.textContent = item.q;
+    els.adviceText.textContent = item.advice || "2〜3文で答えましょう。";
+    els.answerInput.value = answers[currentIndex]?.answer || "";
+    els.nextBtn.textContent = currentIndex === currentQuestions.length - 1 ? "Finish & Review" : "Next Question";
+
+    resetTimer();
+    setTimeout(() => els.answerInput.focus(), 300);
+  }
+
+  function saveCurrentAnswer() {
+    if (answers[currentIndex]) {
+      answers[currentIndex].answer = els.answerInput.value.trim();
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerId);
+    timeLeft = maxTime;
+    paused = false;
+    els.pauseBtn.textContent = "Pause Timer";
+    updateTimer();
+    timerId = setInterval(() => {
+      if (!paused) {
+        timeLeft -= 1;
+        updateTimer();
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          els.timer.textContent = "Time's up!";
+          els.answerInput.blur();
+        }
+      }
+    }, 1000);
+  }
+
+  function updateTimer() {
+    const m = Math.floor(Math.max(0, timeLeft) / 60);
+    const s = Math.max(0, timeLeft) % 60;
+    els.timer.textContent = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function nextQuestion() {
+    saveCurrentAnswer();
+    currentIndex += 1;
+    showQuestion();
+  }
+
+  function retryQuestion() {
+    els.answerInput.value = "";
+    resetTimer();
+    setTimeout(() => els.answerInput.focus(), 200);
+  }
+
+  function finishPractice() {
+    saveCurrentAnswer();
+    clearInterval(timerId);
+    markWeakQuestions();
+
+    els.practiceArea.classList.add("hidden");
+    els.settingArea.classList.remove("hidden");
+    els.feedbackArea.classList.remove("hidden");
+
+    const prompt = buildReviewPrompt();
+    const resultHtml = answers.map((item, i) => `
+      <div class="result-card">
+        <strong>Q${i + 1}: ${escapeHtml(item.q)}</strong>
+        <div class="answer-display">🗣️ ${escapeHtml(item.answer || "（無回答）")}</div>
+      </div>
+    `).join("");
+
+    els.feedbackArea.innerHTML = `
+      <h2>Review & AI添削</h2>
+      <div class="notice">
+        <strong>次の手順：</strong>下のボタンで添削用プロンプトをコピーします。Gemini / ChatGPT を開いたら、入力欄に貼り付けて送信してください。
+      </div>
+      <div class="button-row">
+        <button id="copyAllBtn" class="btn-success" type="button">全問まとめてコピー</button>
+        <button id="practiceAgainBtn" class="btn-primary" type="button">Practice Again</button>
+      </div>
+      <textarea id="reviewPrompt" style="margin-top:12px; min-height:130px;" readonly>${escapeHtml(prompt)}</textarea>
+      <h2 style="margin-top:18px;">Your Answers</h2>
+      ${resultHtml}
+    `;
+
+    document.getElementById("copyAllBtn").addEventListener("click", () => copyPromptAndOpenAi(prompt));
+    document.getElementById("practiceAgainBtn").addEventListener("click", startPractice);
+    renderQuestionList();
+  }
+
+  function markWeakQuestions() {
+    const shortAnswers = answers.filter(item => {
+      const words = (item.answer || "").trim().split(/\s+/).filter(Boolean);
+      return words.length > 0 && words.length < 8;
+    });
+    shortAnswers.forEach(item => {
+      const exists = weakQuestions.some(w => w.q === item.q);
+      if (!exists) weakQuestions.unshift({ cat: item.cat, q: item.q, advice: item.advice });
+    });
+    saveWeakQuestions();
+  }
+
+  function buildReviewPrompt() {
+    let text = "私は高校生です。英語のスピーキング練習をしました。以下の質問と私の回答について、日本語でわかりやすく添削してください。\n\n";
+    text += "【添削してほしい内容】\n";
+    text += "1. 文法ミスの修正\n";
+    text += "2. 元の意味をできるだけ残した自然な英文\n";
+    text += "3. 高校生が使いやすい別表現を2つ\n";
+    text += "4. 良かった点\n";
+    text += "5. 次に意識するポイント\n\n";
+
+    answers.forEach((item, index) => {
+      text += `【質問${index + 1}】${item.q}\n`;
+      text += `【私の回答】${item.answer || "（無回答）"}\n\n`;
+    });
+    return text;
+  }
+
+  async function copyPromptAndOpenAi(prompt) {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      showToast("コピーしました");
+      const ai = els.selectAi.value;
+      if (ai === "gemini") {
+        window.open("https://gemini.google.com/app", "_blank");
+      } else if (ai === "chatgpt") {
+        window.open("https://chatgpt.com/", "_blank");
+      }
+    } catch (e) {
+      const textArea = document.getElementById("reviewPrompt");
+      if (textArea) {
+        textArea.focus();
+        textArea.select();
+      }
+      showToast("コピーできない場合は手動で選択してください");
+    }
+  }
+
+  function addOriginalQuestion() {
+    const q = els.newQuestion.value.trim();
+    const advice = els.newAdvice.value.trim() || "2〜3文で答えましょう。理由を入れるとよいです。";
+    if (!q) {
+      showToast("質問を入力してください");
+      return;
+    }
+    customQuestions.push({ cat: "Original", q, advice });
+    els.newQuestion.value = "";
+    els.newAdvice.value = "";
+    saveState();
+    renderQuestionList();
+    showToast("質問を追加しました");
+  }
+
+  function showToast(message) {
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
+    setTimeout(() => els.toast.classList.remove("show"), 1800);
+  }
+
+  [els.selectCategory, els.selectAi, els.inputCount, els.inputTime].forEach(el => {
+    el.addEventListener("change", saveState);
+  });
+
+  els.startBtn.addEventListener("click", startPractice);
+  els.nextBtn.addEventListener("click", nextQuestion);
+  els.finishBtn.addEventListener("click", finishPractice);
+  els.clearBtn.addEventListener("click", () => {
+    els.answerInput.value = "";
+    els.answerInput.focus();
+  });
+  els.retryBtn.addEventListener("click", retryQuestion);
+  els.pauseBtn.addEventListener("click", () => {
+    paused = !paused;
+    els.pauseBtn.textContent = paused ? "Resume Timer" : "Pause Timer";
+  });
+  els.addQuestionBtn.addEventListener("click", addOriginalQuestion);
+  els.answerInput.addEventListener("input", saveCurrentAnswer);
+
+  loadState();
+  renderQuestionList();
+</script>
 </body>
 </html>
